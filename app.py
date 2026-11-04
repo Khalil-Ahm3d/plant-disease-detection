@@ -1,4 +1,3 @@
-
 import html
 
 import streamlit as st
@@ -18,7 +17,8 @@ st.set_page_config(
 )
 
 # ---------- Styling ----------
-st.markdown("""
+st.markdown(
+    """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
 
@@ -31,13 +31,13 @@ st.markdown("""
 }
 
 .stApp {
-    background-color: var(--cream) !important;
+    background: var(--cream) !important;
     color: var(--ink) !important;
     font-family: 'DM Sans', sans-serif;
 }
 
 [data-testid="stHeader"] {
-    background-color: var(--cream) !important;
+    background: var(--cream) !important;
 }
 
 .block-container {
@@ -45,7 +45,6 @@ st.markdown("""
     padding: 2rem 2rem 3rem;
 }
 
-/* Headings and body text */
 h1, h2, h3, h4, h5, h6 {
     color: var(--forest) !important;
     font-family: 'Playfair Display', serif !important;
@@ -114,7 +113,7 @@ div[data-testid="stMetricDelta"] {
 
 /* Buttons */
 .stButton > button {
-    background-color: #183D2B !important;
+    background: #183D2B !important;
     color: #FFFFFF !important;
     border: 0 !important;
     border-radius: 12px;
@@ -129,76 +128,53 @@ div[data-testid="stMetricDelta"] {
 }
 
 .stButton > button:hover {
-    background-color: #477A53 !important;
+    background: #477A53 !important;
 }
 
-/* UPLOADER: explicitly override Streamlit's dark drop zone */
+/* Uploader: light drop zone with readable text */
 div[data-testid="stFileUploader"] {
-    display: block !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: auto !important;
-    overflow: visible !important;
     box-sizing: border-box !important;
-    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
     color: #26382C !important;
     border: 1px dashed #A9BDA7 !important;
     border-radius: 16px !important;
     padding: 16px !important;
 }
 
-/* Drop zone itself */
 div[data-testid="stFileUploaderDropzone"] {
     background: #F0F3EA !important;
     background-color: #F0F3EA !important;
     color: #26382C !important;
     border: 1px dashed #A9BDA7 !important;
     border-radius: 12px !important;
-    width: 100% !important;
     min-height: 120px !important;
-    height: auto !important;
-    overflow: visible !important;
     box-sizing: border-box !important;
 }
 
-/* Drop zone content and instructions */
-div[data-testid="stFileUploaderDropzone"] > div,
-div[data-testid="stFileUploaderDropzone"] > section,
-div[data-testid="stFileUploaderDropzoneInstructions"],
-div[data-testid="stFileUploaderDropzoneInstructions"] *,
-div[data-testid="stFileUploader"] section {
-    background-color: transparent !important;
+div[data-testid="stFileUploaderDropzone"] *,
+div[data-testid="stFileUploaderDropzoneInstructions"] * {
     color: #26382C !important;
     opacity: 1 !important;
 }
 
-/* Ensure uploader text is readable */
-div[data-testid="stFileUploader"] label,
-div[data-testid="stFileUploader"] p,
-div[data-testid="stFileUploader"] span,
-div[data-testid="stFileUploader"] small {
-    color: #26382C !important;
-}
-
-/* Upload button only */
 div[data-testid="stFileUploader"] button {
-    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
     color: #183D2B !important;
     border: 1px solid #A9BDA7 !important;
     border-radius: 9px !important;
 }
 
-div[data-testid="stFileUploader"] button *,
-div[data-testid="stFileUploader"] button p,
-div[data-testid="stFileUploader"] button span {
+div[data-testid="stFileUploader"] button * {
     color: #183D2B !important;
 }
 
 div[data-testid="stFileUploader"] button:hover {
-    background-color: #E7EFE3 !important;
+    background: #E7EFE3 !important;
 }
 
-/* Prediction result card */
+/* Result card */
 .result-card {
     background: #FFFFFF;
     border: 1px solid #E3E9DF;
@@ -221,7 +197,7 @@ div[data-testid="stFileUploader"] button:hover {
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #F0F3EA !important;
+    background: #F0F3EA !important;
 }
 
 [data-testid="stSidebar"] p,
@@ -233,9 +209,9 @@ div[data-testid="stFileUploader"] button:hover {
     color: #26382C !important;
 }
 
-/* Expanders */
+/* Expanders and alerts */
 [data-testid="stExpander"] {
-    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
     border: 1px solid #E3E9DF;
     border-radius: 12px;
 }
@@ -245,7 +221,6 @@ div[data-testid="stFileUploader"] button:hover {
     color: #183D2B !important;
 }
 
-/* Alerts */
 [data-testid="stAlert"] p,
 [data-testid="stAlert"] span {
     color: #26382C !important;
@@ -265,30 +240,25 @@ div[data-testid="stFileUploader"] button:hover {
     color: #183D2B !important;
 }
 
-/* Mobile layout */
 @media (max-width: 640px) {
     .block-container {
         padding: 1rem 1rem 2rem;
     }
-
     .hero {
         padding: 1.5rem;
         border-radius: 16px;
     }
-
     div[data-testid="stFileUploader"] {
         padding: 10px !important;
     }
-
-    div[data-testid="stFileUploaderDropzone"] {
-        min-height: 110px !important;
-    }
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
-# ---------- Load model ----------
+# ---------- Model loading ----------
 @st.cache_resource(show_spinner=False)
 def load_model():
     processor = AutoImageProcessor.from_pretrained(MODEL_ID)
@@ -305,8 +275,8 @@ with st.sidebar:
 
     st.markdown("### About this project")
     st.write(
-        "An image-classification application that uses a "
-        "fine-tuned MobileNetV2 model to predict plant disease classes."
+        "An image-classification application that uses a fine-tuned "
+        "MobileNetV2 model to predict plant disease classes."
     )
 
     st.markdown("### Model details")
@@ -322,7 +292,8 @@ with st.sidebar:
 
 
 # ---------- Hero ----------
-st.markdown("""
+st.markdown(
+    """
 <div class="hero">
     <div class="eyebrow">SMARTER PLANT CARE · POWERED BY AI</div>
     <h1>Khalil's Plant<br>Disease Detection</h1>
@@ -332,10 +303,12 @@ st.markdown("""
         most likely class in seconds.
     </p>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
-# ---------- Overview metrics ----------
+# ---------- Overview ----------
 m1, m2, m3 = st.columns(3)
 m1.metric("Test accuracy", "86.71%")
 m2.metric("Disease classes", "38")
@@ -417,15 +390,14 @@ if uploaded_file is not None:
                 '<div class="section-label">03 — YOUR RESULTS</div>',
                 unsafe_allow_html=True,
             )
-
             safe_label = html.escape(str(best_label))
             st.markdown(
                 f"""
-                <div class="result-card">
-                    <div class="section-label">MOST LIKELY CLASS</div>
-                    <div class="result-name">{safe_label}</div>
-                </div>
-                """,
+<div class="result-card">
+    <div class="section-label">MOST LIKELY CLASS</div>
+    <div class="result-name">{safe_label}</div>
+</div>
+""",
                 unsafe_allow_html=True,
             )
 
@@ -440,7 +412,6 @@ if uploaded_file is not None:
                     class_id = int(class_id.item())
                     score_percent = float(score.item()) * 100
                     class_name = id2label.get(class_id, str(class_id))
-
                     st.write(f"**{class_name}** — {score_percent:.1f}%")
                     st.progress(min(score_percent / 100, 1.0))
 
@@ -465,13 +436,16 @@ else:
 
 
 # ---------- Footer ----------
-st.markdown("""
+st.markdown(
+    """
 <div class="footer">
     <strong>Khalil's Plant Disease Detection</strong><br>
     Transfer learning · MobileNetV2 · Hugging Face · Streamlit<br>
     Built for learning and smarter plant care 🌱
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
     Transfer learning · MobileNetV2 · Hugging Face · Streamlit<br>
     Built for learning and smarter plant care 🌱
