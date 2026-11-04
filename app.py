@@ -23,7 +23,6 @@ st.markdown("""
 :root {
     --forest: #183D2B;
     --leaf: #477A53;
-    --sage: #E7EFE3;
     --cream: #FAF9F4;
     --ink: #26382C;
 }
@@ -35,7 +34,7 @@ st.markdown("""
 }
 
 [data-testid="stHeader"] {
-    background: rgba(250,249,244,0.9);
+    background: var(--cream);
 }
 
 .block-container {
@@ -44,14 +43,23 @@ st.markdown("""
     padding-bottom: 3rem;
 }
 
-h1, h2, h3 {
+/* Readable headings and body text */
+h1, h2, h3, h4, h5, h6 {
     color: var(--forest) !important;
     font-family: 'Playfair Display', serif !important;
 }
 
+.stApp p,
+.stApp li,
+.stApp label,
+.stApp small {
+    color: var(--ink);
+}
+
+/* Hero banner */
 .hero {
     background: linear-gradient(120deg, #183D2B, #315D40);
-    color: white;
+    color: #FFFFFF;
     padding: 2.6rem 2.4rem;
     border-radius: 24px;
     margin-bottom: 1.6rem;
@@ -66,14 +74,14 @@ h1, h2, h3 {
 }
 
 .hero p {
-    color: #E0EBDD;
+    color: #F0F5ED !important;
     font-size: 1.05rem;
     max-width: 680px;
     line-height: 1.7;
 }
 
 .eyebrow {
-    color: #C5DDBF;
+    color: #D5E8D0 !important;
     font-size: .76rem;
     font-weight: 700;
     letter-spacing: .16em;
@@ -81,82 +89,132 @@ h1, h2, h3 {
 }
 
 .section-label {
-    color: #52745A;
+    color: #315D40 !important;
     font-weight: 700;
     font-size: .78rem;
     letter-spacing: .12em;
     text-transform: uppercase;
 }
 
+/* Metrics */
 div[data-testid="stMetric"] {
-    background: white;
+    background: #FFFFFF;
     border: 1px solid #E5E9DF;
     padding: 1.1rem;
     border-radius: 16px;
     box-shadow: 0 4px 15px rgba(24,61,43,.035);
 }
 
-div[data-testid="stMetricLabel"] {
-    color: #617465;
+div[data-testid="stMetricLabel"],
+div[data-testid="stMetricLabel"] *,
+div[data-testid="stMetricValue"],
+div[data-testid="stMetricValue"] *,
+div[data-testid="stMetricDelta"],
+div[data-testid="stMetricDelta"] * {
+    color: #183D2B !important;
 }
 
+/* Buttons */
 .stButton > button {
-    background: var(--forest);
-    color: white;
-    border: 0;
+    background: #183D2B !important;
+    color: #FFFFFF !important;
+    border: 0 !important;
     border-radius: 12px;
     padding: .72rem 1.3rem;
     font-weight: 700;
     min-height: 3rem;
-    transition: all .2s ease;
+}
+
+.stButton > button p,
+.stButton > button span {
+    color: #FFFFFF !important;
 }
 
 .stButton > button:hover {
-    background: var(--leaf);
-    color: white;
-    border: 0;
+    background: #477A53 !important;
+    color: #FFFFFF !important;
 }
 
+/* File uploader */
 div[data-testid="stFileUploader"] {
-    background: white;
+    background: #FFFFFF;
     border: 1px dashed #A9BDA7;
     border-radius: 16px;
     padding: .6rem;
 }
 
+div[data-testid="stFileUploader"] label,
+div[data-testid="stFileUploader"] p,
+div[data-testid="stFileUploader"] span,
+div[data-testid="stFileUploader"] small {
+    color: #26382C !important;
+}
+
+/* Prediction result */
 .result-card {
-    background: white;
+    background: #FFFFFF;
     border: 1px solid #E3E9DF;
     border-radius: 18px;
     padding: 1.4rem;
     margin: .6rem 0 1rem 0;
 }
 
+.result-card .section-label {
+    color: #315D40 !important;
+}
+
 .result-name {
-    color: #183D2B;
+    color: #183D2B !important;
     font-family: 'Playfair Display', serif;
     font-size: 1.45rem;
     font-weight: 600;
     overflow-wrap: anywhere;
 }
 
-.small-note {
-    color: #667568;
-    font-size: .88rem;
-    line-height: 1.6;
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background: #F0F3EA;
 }
 
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: #26382C !important;
+}
+
+/* Expanders */
+[data-testid="stExpander"] {
+    background: #FFFFFF;
+    border: 1px solid #E3E9DF;
+    border-radius: 12px;
+}
+
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary p {
+    color: #183D2B !important;
+}
+
+/* Alerts */
+[data-testid="stAlert"] p,
+[data-testid="stAlert"] span {
+    color: #26382C !important;
+}
+
+/* Footer */
 .footer {
     border-top: 1px solid #DFE6DB;
     padding-top: 1.2rem;
     margin-top: 3rem;
-    color: #718071;
+    color: #526354 !important;
     font-size: .85rem;
     text-align: center;
 }
 
-[data-testid="stSidebar"] {
-    background: #F0F3EA;
+.footer strong {
+    color: #183D2B !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -272,88 +330,88 @@ if uploaded_file is not None:
                 use_container_width=True,
             )
 
-            if detect:
-                with st.spinner("Analyzing your leaf..."):
-                    processor, model = load_model()
+        if detect:
+            with st.spinner("Analyzing your leaf..."):
+                processor, model = load_model()
 
-                    inputs = processor(
-                        images=image,
-                        return_tensors="pt",
+                inputs = processor(
+                    images=image,
+                    return_tensors="pt",
+                )
+
+                with torch.inference_mode():
+                    outputs = model(**inputs)
+                    probabilities = torch.softmax(
+                        outputs.logits,
+                        dim=-1,
+                    )[0]
+
+                count = min(3, probabilities.shape[0])
+                scores, indices = torch.topk(
+                    probabilities,
+                    k=count,
+                )
+
+                id2label = {
+                    int(key): value
+                    for key, value in model.config.id2label.items()
+                }
+
+                best_id = int(indices[0].item())
+                best_label = id2label.get(
+                    best_id,
+                    str(best_id),
+                )
+                confidence = float(scores[0].item()) * 100
+
+            # ---------- Results ----------
+            st.markdown(
+                '<div class="section-label">03 — YOUR RESULTS</div>',
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                f"""
+                <div class="result-card">
+                    <div class="section-label">MOST LIKELY CLASS</div>
+                    <div class="result-name">{best_label}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.metric(
+                "Model confidence",
+                f"{confidence:.1f}%",
+            )
+
+            st.caption(
+                "Confidence is the model's score for its top "
+                "prediction; it is not a guarantee of correctness."
+            )
+
+            with st.expander("See the top 3 predictions"):
+                for class_id, score in zip(indices, scores):
+                    class_id = int(class_id.item())
+                    score_percent = float(score.item()) * 100
+
+                    class_name = id2label.get(
+                        class_id,
+                        str(class_id),
                     )
 
-                    with torch.inference_mode():
-                        outputs = model(**inputs)
-                        probabilities = torch.softmax(
-                            outputs.logits,
-                            dim=-1,
-                        )[0]
-
-                    count = min(3, probabilities.shape[0])
-                    scores, indices = torch.topk(
-                        probabilities,
-                        k=count,
+                    st.write(
+                        f"**{class_name}** — {score_percent:.1f}%"
+                    )
+                    st.progress(
+                        min(score_percent / 100, 1.0)
                     )
 
-                    id2label = {
-                        int(key): value
-                        for key, value in model.config.id2label.items()
-                    }
-
-                    best_id = int(indices[0].item())
-                    best_label = id2label.get(
-                        best_id,
-                        str(best_id),
-                    )
-                    confidence = float(scores[0].item()) * 100
-
-                # ---------- Results ----------
-                st.markdown(
-                    '<div class="section-label">03 — YOUR RESULTS</div>',
-                    unsafe_allow_html=True,
-                )
-
-                st.markdown(
-                    f"""
-                    <div class="result-card">
-                        <div class="section-label">MOST LIKELY CLASS</div>
-                        <div class="result-name">{best_label}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                st.metric(
-                    "Model confidence",
-                    f"{confidence:.1f}%",
-                )
-
-                st.caption(
-                    "Confidence is the model's score for its top "
-                    "prediction; it is not a guarantee of correctness."
-                )
-
-                with st.expander("See the top 3 predictions"):
-                    for class_id, score in zip(indices, scores):
-                        class_id = int(class_id.item())
-                        score_percent = float(score.item()) * 100
-
-                        class_name = id2label.get(
-                            class_id,
-                            str(class_id),
-                        )
-
-                        st.write(
-                            f"**{class_name}** — {score_percent:.1f}%"
-                        )
-                        st.progress(
-                            min(score_percent / 100, 1.0)
-                        )
-
-                st.info(
-                    "This result is an AI prediction, not a confirmed "
-                    "agricultural diagnosis. Consult a qualified expert "
-                    "before making important crop-treatment decisions."
-                )
+            st.info(
+                "This result is an AI prediction, not a confirmed "
+                "agricultural diagnosis. Consult a qualified expert "
+                "before making important crop-treatment decisions."
+            )
 
     except Exception as error:
         st.error(
