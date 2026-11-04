@@ -1,0 +1,6 @@
+
+streamlit
+torch
+transformers
+pillow
+huggingface_hub
