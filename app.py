@@ -7,9 +7,9 @@ from PIL import Image, ImageOps
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
 
-# ============================================================
+# =========================================================
 # CONFIGURATION
-# ============================================================
+# =========================================================
 
 MODEL_ID = "khalilahmed0062/plant-disease-detection-mobilenet"
 
@@ -21,16 +21,14 @@ st.set_page_config(
 )
 
 
-# ============================================================
-# FIXED BOTANICAL THEME
-# The app intentionally keeps the same readable colors in
-# both Streamlit light mode and dark mode.
-# ============================================================
+# =========================================================
+# DESIGN: FIXED BOTANICAL COLORS FOR BOTH THEMES
+# =========================================================
 
 st.markdown(
     """
 <style>
-/* Main page */
+/* Main application background */
 .stApp,
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"] {
@@ -47,7 +45,7 @@ st.markdown(
     padding: 2rem 2rem 3rem !important;
 }
 
-/* General text */
+/* General headings */
 .stApp h1,
 .stApp h2,
 .stApp h3,
@@ -55,54 +53,70 @@ st.markdown(
     color: #183D2B !important;
 }
 
+/* General text */
 .stApp p,
-.stApp label,
 .stApp li,
-.stApp small,
-.stApp span {
+.stApp label {
     color: #26382C;
 }
 
-/* Hero banner */
-.hero {
-    background: linear-gradient(125deg, #183D2B, #386746);
-    padding: 2.4rem;
-    border-radius: 22px;
-    margin-bottom: 1.6rem;
-    box-shadow: 0 10px 28px rgba(24, 61, 43, 0.12);
-}
+/* =========================================================
+   HERO BANNER AND MAIN TITLE
+   White title on a dark green background
+   ========================================================= */
 
-.hero .eyebrow {
-    color: #D9E9D3 !important;
-    font-size: 0.76rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-}
-
-.hero h1 {
+div.hero {
+    background: linear-gradient(125deg, #123522 0%, #285B3B 100%) !important;
+    padding: 2.5rem !important;
+    border-radius: 22px !important;
+    margin-bottom: 1.6rem !important;
+    box-shadow: 0 10px 28px rgba(24, 61, 43, 0.16) !important;
     color: #FFFFFF !important;
-    font-family: Georgia, serif !important;
-    font-size: clamp(2rem, 4vw, 3.2rem);
-    line-height: 1.2;
-    margin: 0.7rem 0;
 }
 
-.hero p {
-    color: #F2F7EF !important;
-    font-size: 1.05rem;
-    line-height: 1.7;
+div.hero .eyebrow {
+    color: #E0EEDF !important;
+    font-size: 0.76rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.15em !important;
+    text-transform: uppercase !important;
+    opacity: 1 !important;
+}
+
+/* Strong title styling to override global heading rules */
+div.hero h1,
+div.hero h1 *,
+div.hero h1 a {
+    color: #FFFFFF !important;
+    background: transparent !important;
+    font-family: Georgia, "Times New Roman", serif !important;
+    font-size: clamp(2.2rem, 5vw, 3.4rem) !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.02em !important;
+    opacity: 1 !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18) !important;
+    margin: 0.7rem 0 !important;
+}
+
+div.hero p,
+div.hero p * {
+    color: #F3F7F0 !important;
+    font-size: 1.05rem !important;
+    line-height: 1.75 !important;
     max-width: 700px;
-    margin-bottom: 0;
+    opacity: 1 !important;
+    background: transparent !important;
+    margin-bottom: 0 !important;
 }
 
 /* Section labels */
 .section-label {
     color: #315D40 !important;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
 }
 
 /* Metric cards */
@@ -113,52 +127,27 @@ div[data-testid="stMetric"] {
     padding: 1rem !important;
 }
 
-div[data-testid="stMetric"] * {
+div[data-testid="stMetric"] *,
+div[data-testid="stMetricLabel"],
+div[data-testid="stMetricValue"] {
     color: #183D2B !important;
 }
 
-/* Sidebar: fixed light background and readable text */
-section[data-testid="stSidebar"] {
-    background: #F0F3EA !important;
-}
+/* =========================================================
+   UPLOADER: FIXED LIGHT BACKGROUND AND DARK TEXT
+   ========================================================= */
 
-section[data-testid="stSidebar"] > div {
-    background: #F0F3EA !important;
-}
-
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3,
-section[data-testid="stSidebar"] p,
-section[data-testid="stSidebar"] span,
-section[data-testid="stSidebar"] label,
-section[data-testid="stSidebar"] small {
-    color: #26382C !important;
-}
-
-/* ========================================================
-   UPLOADER
-   Explicitly style the whole uploader, including the small
-   "200MB per file" and supported-file-types text.
-   ======================================================== */
-
-div[data-testid="stFileUploader"],
-div[data-testid="stFileUploader"] > section,
-div[data-testid="stFileUploader"] section {
+div[data-testid="stFileUploader"] {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
     background: #FFFFFF !important;
     color: #26382C !important;
-    border-radius: 15px !important;
-}
-
-div[data-testid="stFileUploader"] {
     border: 1px solid #DDE6D9 !important;
+    border-radius: 15px !important;
     padding: 14px !important;
 }
 
-/* Drop area */
 div[data-testid="stFileUploaderDropzone"] {
     background: #F0F3EA !important;
     background-color: #F0F3EA !important;
@@ -170,20 +159,20 @@ div[data-testid="stFileUploaderDropzone"] {
     box-sizing: border-box !important;
 }
 
-/* Force readable text on ALL descendants of the uploader.
-   This overrides inherited dark-mode text colors. */
-div[data-testid="stFileUploader"] *,
+/* Keep uploader instructions and file limit readable */
 div[data-testid="stFileUploader"] p,
 div[data-testid="stFileUploader"] span,
 div[data-testid="stFileUploader"] small,
 div[data-testid="stFileUploader"] label,
 div[data-testid="stFileUploader"] section,
-div[data-testid="stFileUploader"] [data-testid] {
+div[data-testid="stFileUploader"] [data-testid],
+div[data-testid="stFileUploaderDropzone"] *,
+div[data-testid="stFileUploaderDropzoneInstructions"] * {
     color: #26382C !important;
     opacity: 1 !important;
 }
 
-/* Upload button */
+/* Browse files button */
 div[data-testid="stFileUploader"] button {
     background: #FFFFFF !important;
     color: #183D2B !important;
@@ -201,14 +190,14 @@ div[data-testid="stFileUploader"] button:hover {
     background: #E4EDE0 !important;
 }
 
-/* Buttons */
+/* Main action button */
 .stButton > button {
     background: #183D2B !important;
     color: #FFFFFF !important;
     border: none !important;
     border-radius: 11px !important;
-    min-height: 3rem;
-    font-weight: 700;
+    min-height: 3rem !important;
+    font-weight: 700 !important;
 }
 
 .stButton > button p,
@@ -220,13 +209,13 @@ div[data-testid="stFileUploader"] button:hover {
     background: #386746 !important;
 }
 
-/* Results */
+/* Prediction result card */
 .result-card {
     background: #FFFFFF !important;
     border: 1px solid #DDE6D9 !important;
-    border-radius: 16px;
-    padding: 1.3rem;
-    margin: 0.6rem 0 1rem;
+    border-radius: 16px !important;
+    padding: 1.3rem !important;
+    margin: 0.6rem 0 1rem !important;
 }
 
 .result-card .section-label {
@@ -235,13 +224,29 @@ div[data-testid="stFileUploader"] button:hover {
 
 .result-name {
     color: #183D2B !important;
-    font-family: Georgia, serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    overflow-wrap: anywhere;
+    font-family: Georgia, "Times New Roman", serif !important;
+    font-size: 1.45rem !important;
+    font-weight: 700 !important;
+    overflow-wrap: anywhere !important;
 }
 
-/* Expander */
+/* Sidebar */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div {
+    background: #F0F3EA !important;
+}
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3,
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] small {
+    color: #26382C !important;
+}
+
+/* Expanders */
 [data-testid="stExpander"] {
     background: #FFFFFF !important;
     border: 1px solid #DDE6D9 !important;
@@ -251,11 +256,6 @@ div[data-testid="stFileUploader"] button:hover {
 [data-testid="stExpander"] summary,
 [data-testid="stExpander"] summary * {
     color: #183D2B !important;
-}
-
-/* Alerts */
-[data-testid="stAlert"] {
-    border-radius: 12px !important;
 }
 
 /* Footer */
@@ -272,15 +272,19 @@ div[data-testid="stFileUploader"] button:hover {
     color: #183D2B !important;
 }
 
-/* Small screens */
+/* Mobile layout */
 @media (max-width: 640px) {
     .block-container {
         padding: 1rem 1rem 2rem !important;
     }
 
-    .hero {
-        padding: 1.5rem;
-        border-radius: 16px;
+    div.hero {
+        padding: 1.5rem !important;
+        border-radius: 16px !important;
+    }
+
+    div.hero h1 {
+        font-size: 2.2rem !important;
     }
 
     div[data-testid="stFileUploader"] {
@@ -293,9 +297,9 @@ div[data-testid="stFileUploader"] button:hover {
 )
 
 
-# ============================================================
-# LOAD MODEL
-# ============================================================
+# =========================================================
+# LOAD THE HUGGING FACE MODEL
+# =========================================================
 
 @st.cache_resource(show_spinner=False)
 def load_model():
@@ -305,9 +309,9 @@ def load_model():
     return processor, model
 
 
-# ============================================================
+# =========================================================
 # SIDEBAR
-# ============================================================
+# =========================================================
 
 with st.sidebar:
     st.markdown("## 🌿 Khalil's")
@@ -323,19 +327,19 @@ with st.sidebar:
 
     st.markdown("### Model information")
     st.write("**Architecture:** MobileNetV2")
-    st.write("**Classes:** 38")
+    st.write("**Classification classes:** 38")
     st.write("**Test accuracy:** 86.71%")
 
     st.divider()
     st.caption(
-        "For educational use. Predictions can be incorrect and "
+        "For educational use. Predictions may be incorrect and "
         "should not replace professional agricultural advice."
     )
 
 
-# ============================================================
-# HERO
-# ============================================================
+# =========================================================
+# HERO BANNER
+# =========================================================
 
 st.markdown(
     """
@@ -353,15 +357,15 @@ st.markdown(
 )
 
 
-# ============================================================
+# =========================================================
 # OVERVIEW METRICS
-# ============================================================
+# =========================================================
 
-col1, col2, col3 = st.columns(3)
+metric1, metric2, metric3 = st.columns(3)
 
-col1.metric("Test accuracy", "86.71%")
-col2.metric("Disease classes", "38")
-col3.metric("Model", "MobileNetV2")
+metric1.metric("Test accuracy", "86.71%")
+metric2.metric("Disease classes", "38")
+metric3.metric("Model", "MobileNetV2")
 
 st.write("")
 
@@ -378,9 +382,9 @@ st.write(
 )
 
 
-# ============================================================
+# =========================================================
 # IMAGE UPLOADER
-# ============================================================
+# =========================================================
 
 uploaded_file = st.file_uploader(
     "Upload a leaf photo",
@@ -395,18 +399,19 @@ uploaded_file = st.file_uploader(
         "gif",
     ],
     help=(
-        "Supported formats: JPG, JPEG, PNG, WebP, BMP, TIFF and GIF. "
-        "Maximum file size depends on the Streamlit app configuration."
+        "Supported formats: JPG, JPEG, PNG, WebP, BMP, TIFF and GIF."
     ),
 )
 
 
-# ============================================================
-# PREDICTION
-# ============================================================
+# =========================================================
+# IMAGE PREDICTION
+# =========================================================
 
 if uploaded_file is None:
-    st.info("Upload a leaf image above to begin your plant health analysis.")
+    st.info(
+        "Upload a leaf image above to begin your plant health analysis."
+    )
 
 else:
     try:
@@ -430,11 +435,12 @@ else:
                 '<div class="section-label">02 — AI ANALYSIS</div>',
                 unsafe_allow_html=True,
             )
+
             st.subheader("Ready to inspect")
 
             st.write(
-                "When you start the analysis, the model will compare "
-                "your photo with patterns learned during training."
+                "Start the analysis to compare your photo with patterns "
+                "learned by the model during training."
             )
 
             detect_button = st.button(
@@ -459,6 +465,7 @@ else:
                     )[0]
 
                 top_count = min(3, probabilities.numel())
+
                 scores, indices = torch.topk(
                     probabilities,
                     k=top_count,
@@ -470,10 +477,12 @@ else:
                 }
 
                 predicted_id = int(indices[0].item())
+
                 predicted_label = id2label.get(
                     predicted_id,
                     str(predicted_id),
                 )
+
                 confidence = float(scores[0].item()) * 100
 
             st.markdown(
@@ -505,6 +514,7 @@ else:
                 for class_tensor, score_tensor in zip(indices, scores):
                     class_id = int(class_tensor.item())
                     score_percent = float(score_tensor.item()) * 100
+
                     class_name = id2label.get(
                         class_id,
                         str(class_id),
@@ -513,6 +523,7 @@ else:
                     st.write(
                         f"**{class_name}** — {score_percent:.1f}%"
                     )
+
                     st.progress(
                         min(max(score_percent / 100, 0.0), 1.0)
                     )
@@ -532,9 +543,9 @@ else:
             st.exception(error)
 
 
-# ============================================================
+# =========================================================
 # FOOTER
-# ============================================================
+# =========================================================
 
 st.markdown(
     '<div class="footer">'
