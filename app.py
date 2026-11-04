@@ -310,7 +310,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-            )
+            
 
     except Exception as error:
         st.error("The image could not be processed or the model could not load.")
