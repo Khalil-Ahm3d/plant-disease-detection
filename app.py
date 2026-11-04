@@ -1,181 +1,270 @@
 import html
 import io
- 
+
 import streamlit as st
 import torch
 from PIL import Image, ImageOps
 from transformers import AutoImageProcessor, AutoModelForImageClassification
- 
+
 # ------------------------------------------------------------------
 # Config
 # ------------------------------------------------------------------
 MODEL_ID = "khalilahmed0062/plant-disease-detection-mobilenet"
- 
+APP_NAME = "Khalil Plant Disease Detection"
+
 st.set_page_config(
-    page_title="Khalil Plant Disease Detection",
+    page_title=APP_NAME,
     page_icon="🌿",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
- 
+
 # ------------------------------------------------------------------
-# Styling
+# Themes (System follows the device; Light and Dark are forced)
 # ------------------------------------------------------------------
+LIGHT = """
+  --bg:#EDF3EE; --surface:#FFFFFF; --surface2:#F2F8F3;
+  --ink:#14261F; --muted:#556B5F;
+  --line:#D4E2D8; --line-strong:#9FC2AB;
+  --accent:#2F7D4F; --accent-2:#6BBE6F; --accent-soft:#DDF0E2;
+  --track:#E1ECE4; --fill-dim:#A3C4B0;
+  --ok-bg:#E4F5D3; --ok-line:#BFE29A; --ok-ring:#3F8F5B;
+  --bad-bg:#FBEBE2; --bad-line:#EFC5AF; --bad-ring:#C0562B;
+  --hero-a:#123B2E; --hero-b:#1B5240;
+  --shadow:0 1px 2px rgba(20,38,31,.05), 0 8px 24px rgba(20,38,31,.06);
+"""
+
+DARK = """
+  --bg:#0B1612; --surface:#12231C; --surface2:#182D24;
+  --ink:#E7F3EA; --muted:#9BB3A5;
+  --line:#25392F; --line-strong:#3A5546;
+  --accent:#63C184; --accent-2:#B6E36B; --accent-soft:#1F3D2F;
+  --track:#233A2F; --fill-dim:#4D7360;
+  --ok-bg:#183323; --ok-line:#2D5A3A; --ok-ring:#63C184;
+  --bad-bg:#37201A; --bad-line:#6A3A29; --bad-ring:#E98A5B;
+  --hero-a:#0E2F24; --hero-b:#17503B;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.35);
+"""
+
+mode = st.session_state.get("theme", "System")
+if mode == "Light":
+    theme_vars = f":root {{ {LIGHT} color-scheme: light; }}"
+elif mode == "Dark":
+    theme_vars = f":root {{ {DARK} color-scheme: dark; }}"
+else:
+    theme_vars = (
+        f":root {{ {LIGHT} color-scheme: light dark; }} "
+        f"@media (prefers-color-scheme: dark) {{ :root {{ {DARK} }} }}"
+    )
+
 CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&display=swap');
- 
-:root {
-  --canopy: #123B2E;
-  --canopy-2: #1B5240;
-  --leaf: #3F8F5B;
-  --lime: #C4EB6E;
-  --mist: #EDF4EE;
-  --paper: #FBFDFA;
-  --ink: #14261F;
-  --muted: #5E7268;
-  --line: #D7E4DA;
-  --blight: #B5532B;
-  --blight-bg: #FBEBE2;
-  --ok-bg: #E4F5D3;
-}
- 
-html, body, [class*="css"], .stApp {
+
+/*THEME_VARS*/
+
+html, body, .stApp {
   font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg);
   color: var(--ink);
 }
-.stApp { background: var(--mist); }
- 
-#MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
-.block-container { padding-top: 1.2rem; padding-bottom: 3rem; max-width: 1180px; }
- 
-h1, h2, h3, .display { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -0.02em; }
- 
-/* Hero */
-.hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: 28px;
-  padding: 3.2rem 3rem 3rem;
-  background:
-    radial-gradient(900px 380px at 88% -10%, rgba(196,235,110,.28), transparent 60%),
-    linear-gradient(135deg, var(--canopy) 0%, var(--canopy-2) 100%);
-  color: #F2FAEF;
-  margin-bottom: 1.6rem;
+.stApp { transition: background .2s ease; }
+
+/* Hide Streamlit chrome so the theme always looks consistent */
+#MainMenu, footer,
+[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"] { display: none !important; }
+header[data-testid="stHeader"] { background: transparent; height: 0; }
+.block-container { padding-top: 1.4rem; padding-bottom: 3rem; max-width: 1180px; }
+
+h1, h2, h3, h4 { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -0.02em; }
+
+/* ---------- Top bar ---------- */
+.brand { display: flex; align-items: center; gap: .7rem; padding: .35rem 0; }
+.brand .mark {
+  width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); color: #CDEFA0;
 }
-.hero .leaf-bg {
-  position: absolute; right: -30px; bottom: -50px;
-  font-size: 15rem; line-height: 1; opacity: .09;
-  transform: rotate(-18deg); pointer-events: none; user-select: none;
+.brand .mark svg { width: 24px; height: 24px; }
+.brand b { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.12rem; font-weight: 700; color: var(--ink); }
+
+/* Theme switch (radio styled as a pill group) */
+[data-testid="stRadio"] { display: flex; justify-content: flex-end; }
+[data-testid="stRadio"] > label { display: none; }
+[data-testid="stRadio"] [role="radiogroup"] {
+  display: inline-flex; gap: .15rem; padding: .25rem; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+[data-testid="stRadio"] [role="radiogroup"] label {
+  margin: 0; padding: .32rem .8rem; border-radius: 999px; cursor: pointer;
+}
+[data-testid="stRadio"] [role="radiogroup"] label p {
+  color: var(--ink); font-size: .88rem; font-weight: 600; white-space: nowrap;
+}
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) { background: var(--accent-soft); }
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p { color: var(--accent); }
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative; overflow: hidden; border-radius: 28px;
+  padding: 3.1rem 3rem; margin: .6rem 0 1.6rem;
+  background:
+    radial-gradient(800px 360px at 92% -10%, rgba(182,227,107,.26), transparent 60%),
+    linear-gradient(135deg, var(--hero-a) 0%, var(--hero-b) 100%);
+  color: #F2FAEF;
+}
+.hero .art {
+  position: absolute; right: -20px; bottom: -40px; width: 330px; height: 330px;
+  color: #CDEFA0; opacity: .16; transform: rotate(-8deg); pointer-events: none;
 }
 .hero h1 {
-  font-size: clamp(2.2rem, 5vw, 3.8rem);
-  font-weight: 800; line-height: 1.02; margin: 0 0 .9rem; color: #fff;
-  max-width: 16ch;
+  font-size: clamp(2.1rem, 4.6vw, 3.6rem); font-weight: 800; line-height: 1.03;
+  margin: 0 0 .9rem; color: #fff; max-width: 15ch;
 }
-.hero p {
-  font-size: 1.08rem; line-height: 1.55; max-width: 52ch;
-  color: #CFE3D2; margin: 0 0 1.4rem;
-}
+.hero p { font-size: 1.07rem; line-height: 1.55; max-width: 50ch; color: #CFE3D2; margin: 0 0 1.4rem; }
 .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
 .chip {
-  padding: .38rem .85rem; border-radius: 999px; font-size: .85rem; font-weight: 500;
-  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); color: #E8F5E6;
+  padding: .36rem .85rem; border-radius: 999px; font-size: .84rem; font-weight: 500;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #E8F5E6;
 }
- 
-/* Cards */
+
+/* ---------- Cards ---------- */
 .card {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  padding: 1.5rem 1.6rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 22px;
+  padding: 1.5rem 1.6rem; box-shadow: var(--shadow); color: var(--ink);
 }
-.card h3 { font-size: 1.25rem; font-weight: 700; margin: 0 0 .25rem; }
-.card .sub { color: var(--muted); font-size: .95rem; margin-bottom: 1rem; }
- 
-/* Uploader */
-[data-testid="stFileUploader"] section {
-  border: 2px dashed #A9C8B2; background: #F3F9F3; border-radius: 18px; padding: 1.4rem;
+.card h3 { font-size: 1.25rem; font-weight: 700; margin: 0 0 .2rem; color: var(--ink); }
+.card .sub { color: var(--muted); font-size: .95rem; margin-bottom: 1rem; line-height: 1.45; }
+
+/* The left column becomes the upload card */
+[data-testid="stColumn"]:has(.upload-anchor),
+[data-testid="column"]:has(.upload-anchor) {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 22px;
+  padding: 1.5rem 1.6rem !important; box-shadow: var(--shadow); box-sizing: border-box;
+}
+
+/* ---------- File uploader ---------- */
+[data-testid="stFileUploader"] * { color: var(--ink); }
+[data-testid="stFileUploader"] small,
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzoneInstructions"] span { color: var(--muted) !important; }
+[data-testid="stFileUploaderDropzone"], [data-testid="stFileUploader"] section {
+  background: var(--surface2) !important; border: 2px dashed var(--line-strong) !important;
+  border-radius: 18px !important; padding: 1.4rem !important;
   transition: border-color .15s ease, background .15s ease;
 }
-[data-testid="stFileUploader"] section:hover { border-color: var(--leaf); background: #EAF5EA; }
+[data-testid="stFileUploaderDropzone"]:hover, [data-testid="stFileUploader"] section:hover {
+  border-color: var(--accent) !important;
+}
 [data-testid="stFileUploader"] button {
-  border-radius: 999px; border: 1px solid var(--leaf); color: var(--canopy); background: #fff; font-weight: 600;
+  background: var(--accent) !important; border: 1px solid var(--accent) !important;
+  border-radius: 999px !important; font-weight: 600;
 }
- 
-/* Image */
+[data-testid="stFileUploader"] button, [data-testid="stFileUploader"] button * { color: #fff !important; }
+[data-testid="stFileUploaderFile"] { background: transparent; }
+
+/* ---------- Image / captions / spinner ---------- */
 [data-testid="stImage"] img { border-radius: 18px; border: 1px solid var(--line); }
- 
-/* Result */
-.verdict {
-  border-radius: 20px; padding: 1.3rem 1.4rem; display: flex; gap: 1.2rem; align-items: center;
-  margin-bottom: 1.2rem;
+[data-testid="stImageCaption"], [data-testid="stCaptionContainer"] { color: var(--muted) !important; }
+[data-testid="stSpinner"], [data-testid="stSpinner"] * { color: var(--ink) !important; }
+
+/* ---------- Alerts and expanders ---------- */
+[data-testid="stAlert"] {
+  background: var(--surface2) !important; border: 1px solid var(--line-strong); border-radius: 14px;
 }
-.verdict.healthy { background: var(--ok-bg); border: 1px solid #BFE29A; }
-.verdict.diseased { background: var(--blight-bg); border: 1px solid #EFC5AF; }
+[data-testid="stAlert"], [data-testid="stAlert"] * { color: var(--ink) !important; }
+[data-testid="stExpander"] details {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+}
+[data-testid="stExpander"] summary, [data-testid="stExpander"] summary * { color: var(--ink) !important; }
+pre.err {
+  white-space: pre-wrap; word-break: break-word; font-size: .85rem; line-height: 1.5;
+  background: var(--surface2); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 12px; padding: .8rem 1rem; margin: 0;
+}
+
+/* ---------- Result ---------- */
+.verdict {
+  border-radius: 20px; padding: 1.25rem 1.4rem; display: flex; gap: 1.2rem; align-items: center;
+  margin-bottom: 1.3rem;
+}
+.verdict.healthy { background: var(--ok-bg); border: 1px solid var(--ok-line); --ring-color: var(--ok-ring); }
+.verdict.diseased { background: var(--bad-bg); border: 1px solid var(--bad-line); --ring-color: var(--bad-ring); }
 .ring {
-  --p: 0; flex: none; width: 92px; height: 92px; border-radius: 50%;
-  background: conic-gradient(var(--ring-color) calc(var(--p) * 1%), rgba(20,38,31,.1) 0);
+  --p: 0; flex: none; width: 96px; height: 96px; border-radius: 50%;
+  background: conic-gradient(var(--ring-color) calc(var(--p) * 1%), var(--track) 0);
   display: grid; place-items: center;
 }
 .ring span {
-  width: 72px; height: 72px; border-radius: 50%; background: var(--paper);
+  width: 76px; height: 76px; border-radius: 50%; background: var(--surface); color: var(--ink);
   display: grid; place-items: center;
-  font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.15rem;
+  font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.2rem;
 }
 .verdict .plant { color: var(--muted); font-size: .92rem; margin: 0; }
 .verdict .name {
-  font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.7rem; font-weight: 800;
-  line-height: 1.1; margin: .1rem 0 .4rem;
+  font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.65rem; font-weight: 800;
+  line-height: 1.1; margin: .12rem 0 .5rem; color: var(--ink);
 }
-.badge {
-  display: inline-block; padding: .22rem .7rem; border-radius: 999px; font-size: .82rem; font-weight: 600;
-}
-.healthy .badge { background: #2E7D32; color: #fff; }
-.diseased .badge { background: var(--blight); color: #fff; }
- 
-/* Probability bars */
-.bar-row { margin: .75rem 0; }
-.bar-head { display: flex; justify-content: space-between; font-size: .92rem; margin-bottom: .3rem; }
+.badge { display: inline-block; padding: .24rem .75rem; border-radius: 999px; font-size: .82rem; font-weight: 600; color: #fff; }
+.healthy .badge { background: #2E7D4A; }
+.diseased .badge { background: #B24A22; }
+
+.list-title { font-weight: 700; font-size: .98rem; margin: 0 0 .2rem; color: var(--ink); }
+.bar-row { margin: .8rem 0; }
+.bar-head { display: flex; justify-content: space-between; gap: 1rem; font-size: .92rem; margin-bottom: .32rem; color: var(--ink); }
 .bar-head b { font-weight: 600; }
-.bar-head span { color: var(--muted); font-variant-numeric: tabular-nums; }
-.track { height: 9px; border-radius: 99px; background: #E3EDE5; overflow: hidden; }
-.fill { height: 100%; border-radius: 99px; background: #9DBFA9; }
-.fill.top { background: linear-gradient(90deg, var(--leaf), #6BBE6F); }
- 
-/* Empty state */
-.empty {
-  text-align: center; padding: 2.6rem 1rem; color: var(--muted);
-  border: 1px dashed var(--line); border-radius: 18px; background: #F6FAF6;
+.bar-head span { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.track { height: 9px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.fill { height: 100%; border-radius: 99px; background: var(--fill-dim); }
+.fill.top { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.disclaimer { margin-top: 1.1rem; font-size: .85rem; color: var(--muted); line-height: 1.5; }
+
+/* ---------- Empty state: how it works ---------- */
+.steps { display: grid; gap: .8rem; margin-top: .4rem; }
+.step {
+  display: flex; gap: .9rem; align-items: flex-start; padding: .9rem 1rem;
+  background: var(--surface2); border: 1px solid var(--line); border-radius: 16px;
 }
-.empty .big { font-size: 2.8rem; }
-.empty p { margin: .4rem auto 0; max-width: 34ch; line-height: 1.5; }
- 
-/* Tips */
+.step .n {
+  flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .9rem;
+}
+.step b { display: block; color: var(--ink); font-size: .98rem; }
+.step span { color: var(--muted); font-size: .9rem; line-height: 1.45; }
+
+/* ---------- Tips ---------- */
 .tips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.6rem; }
-.tip { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 1.1rem 1.2rem; }
+.tip { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 1.1rem 1.2rem; box-shadow: var(--shadow); }
 .tip .emoji { font-size: 1.5rem; }
-.tip h4 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.02rem; margin: .4rem 0 .2rem; }
+.tip h4 { font-size: 1.02rem; margin: .4rem 0 .2rem; color: var(--ink); }
 .tip p { font-size: .9rem; color: var(--muted); margin: 0; line-height: 1.45; }
+
+.footer { text-align: center; color: var(--muted); font-size: .85rem; margin-top: 2.2rem; line-height: 1.7; }
+.footer a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
 @media (max-width: 800px) {
   .tips { grid-template-columns: 1fr; }
   .hero { padding: 2rem 1.4rem; }
+  .hero .art { width: 220px; height: 220px; }
   .verdict { flex-direction: column; text-align: center; }
+  [data-testid="stRadio"] { justify-content: flex-start; }
 }
- 
-.disclaimer { margin-top: 1.1rem; font-size: .85rem; color: var(--muted); line-height: 1.5; }
-.footer { text-align: center; color: var(--muted); font-size: .85rem; margin-top: 2.2rem; }
- 
-/* Sidebar */
-section[data-testid="stSidebar"] { background: var(--canopy); }
-section[data-testid="stSidebar"] * { color: #E3F1E4 !important; }
- 
-:focus-visible { outline: 3px solid var(--lime) !important; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+:focus-visible { outline: 3px solid var(--accent-2) !important; outline-offset: 2px; }
 </style>
-"""
+""".replace("/*THEME_VARS*/", theme_vars)
+
 st.markdown(CSS, unsafe_allow_html=True)
- 
- 
+
+LEAF_SVG = """
+<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="3"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M170 30C110 28 52 52 40 112c-4 22 4 44 20 56 22-6 44-18 62-40 24-30 38-62 48-98z"/>
+  <path d="M44 166C70 120 104 84 150 52"/>
+  <path d="M82 128l-2-30M100 106l-4-32M118 86l-2-28M72 138l-26-8M92 118l-24-14M112 98l-22-12M132 78l-18-8"/>
+</svg>
+"""
+
+
 # ------------------------------------------------------------------
 # Model
 # ------------------------------------------------------------------
@@ -185,30 +274,28 @@ def load_model():
     model = AutoModelForImageClassification.from_pretrained(MODEL_ID)
     model.eval()
     return processor, model
- 
- 
+
+
 @st.cache_data(show_spinner=False)
 def predict(image_bytes: bytes, top_k: int = 5):
     processor, model = load_model()
-    image = Image.open(io.BytesIO(image_bytes))
-    image = ImageOps.exif_transpose(image).convert("RGB")
- 
+    image = ImageOps.exif_transpose(Image.open(io.BytesIO(image_bytes))).convert("RGB")
+
     inputs = processor(images=image, return_tensors="pt")
     with torch.no_grad():
-        logits = model(**inputs).logits
-        probs = torch.softmax(logits, dim=1)[0]
- 
+        probs = torch.softmax(model(**inputs).logits, dim=1)[0]
+
     k = min(top_k, probs.shape[0])
     values, indices = torch.topk(probs, k)
     label_map = model.config.id2label
- 
+
     results = []
     for p, i in zip(values.tolist(), indices.tolist()):
         label = label_map.get(i, label_map.get(str(i), str(i)))
         results.append((label, p * 100))
     return results
- 
- 
+
+
 def split_label(raw: str):
     """Turn 'Tomato___Early_blight' into ('Tomato', 'Early blight')."""
     raw = str(raw)
@@ -220,69 +307,77 @@ def split_label(raw: str):
         plant, cond = raw.split(",", 1)
     else:
         plant, cond = "", raw
-    clean = lambda s: " ".join(s.replace("_", " ").replace("(", "(").split()).strip(" ,")
+    clean = lambda s: " ".join(s.replace("_", " ").split()).strip(" ,")
     return clean(plant), clean(cond)
- 
- 
+
+
 def is_healthy(cond: str) -> bool:
     return "healthy" in cond.lower()
- 
- 
+
+
 # ------------------------------------------------------------------
-# Sidebar
+# Top bar: brand + theme switch
 # ------------------------------------------------------------------
-with st.sidebar:
-    st.markdown("### 🌿 Khalil Plant Disease Detection")
-    st.write(
-        "A transfer-learning model (MobileNet) fine-tuned to recognise plant "
-        "leaf diseases from a single photo."
-    )
-    st.markdown("**Model**")
-    st.code(MODEL_ID, language=None)
+try:
+    nav_left, nav_right = st.columns([3, 2], vertical_alignment="center")
+except TypeError:  # older Streamlit versions
+    nav_left, nav_right = st.columns([3, 2])
+
+with nav_left:
     st.markdown(
-        f"[View on Hugging Face](https://huggingface.co/{MODEL_ID})"
+        f'<div class="brand"><div class="mark">{LEAF_SVG}</div><b>{APP_NAME}</b></div>',
+        unsafe_allow_html=True,
     )
-    show_top = st.slider("Predictions to show", 1, 5, 3)
- 
+with nav_right:
+    st.radio(
+        "Theme",
+        ["System", "Light", "Dark"],
+        key="theme",
+        horizontal=True,
+        format_func=lambda x: {"System": "🖥️ System", "Light": "☀️ Light", "Dark": "🌙 Dark"}[x],
+        label_visibility="collapsed",
+    )
+
 # ------------------------------------------------------------------
 # Hero
 # ------------------------------------------------------------------
 st.markdown(
-    """
+    f"""
     <div class="hero">
-      <div class="leaf-bg">🍃</div>
-      <h1>Khalil Plant Disease Detection</h1>
-      <p>Check a leaf in seconds. Upload a clear photo of a plant leaf and the model will name the most
-      likely disease, with a confidence score and the runner-up possibilities.</p>
+      <div class="art">{LEAF_SVG}</div>
+      <h1>{APP_NAME}</h1>
+      <p>Check a leaf in seconds. Upload a clear photo and the model names the most
+      likely disease, with a confidence score and the closest alternatives.</p>
       <div class="chips">
-        <span class="chip">Transfer learning</span>
         <span class="chip">MobileNet</span>
-        <span class="chip">Hugging Face model</span>
-        <span class="chip">Runs on Streamlit</span>
+        <span class="chip">Transfer learning</span>
+        <span class="chip">Hosted on Hugging Face</span>
       </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
- 
+
 # ------------------------------------------------------------------
 # Main layout
 # ------------------------------------------------------------------
 left, right = st.columns(2, gap="large")
- 
+
+image = None
+image_bytes = None
+
 with left:
     st.markdown(
-        '<div class="card"><h3>Upload a leaf photo</h3>'
-        '<div class="sub">JPG or PNG. One leaf, in focus, on a plain background works best.</div></div>',
+        '<div class="upload-anchor"></div>'
+        '<h3 style="margin:0 0 .2rem;font-size:1.25rem;">Upload a leaf photo</h3>'
+        '<div style="color:var(--muted);font-size:.95rem;margin-bottom:1rem;line-height:1.45;">'
+        "JPG or PNG. One leaf, in focus, on a plain background works best.</div>",
         unsafe_allow_html=True,
     )
     uploaded_file = st.file_uploader(
-        "Leaf image",
-        type=["jpg", "jpeg", "png"],
-        label_visibility="collapsed",
+        "Leaf image", type=["jpg", "jpeg", "png"], label_visibility="collapsed"
     )
- 
-    image = None
+
     if uploaded_file is not None:
         try:
             image_bytes = uploaded_file.getvalue()
@@ -290,17 +385,23 @@ with left:
             st.image(image, caption=uploaded_file.name, use_container_width=True)
         except Exception:
             image = None
+            image_bytes = None
             st.error("That file could not be read as an image. Upload a JPG or PNG and try again.")
- 
+
 with right:
     if image is None:
         st.markdown(
             """
             <div class="card">
               <h3>Result</h3>
-              <div class="empty">
-                <div class="big">🔍</div>
-                <p>Upload a leaf photo on the left and the diagnosis will appear here.</p>
+              <div class="sub">Your diagnosis will appear here.</div>
+              <div class="steps">
+                <div class="step"><div class="n">1</div><div><b>Upload a photo</b>
+                  <span>Choose a clear picture of one leaf.</span></div></div>
+                <div class="step"><div class="n">2</div><div><b>The model analyses it</b>
+                  <span>It runs automatically as soon as the photo loads.</span></div></div>
+                <div class="step"><div class="n">3</div><div><b>Read the result</b>
+                  <span>See the likely disease, the confidence, and other possibilities.</span></div></div>
               </div>
             </div>
             """,
@@ -310,17 +411,16 @@ with right:
         try:
             with st.spinner("Analysing the leaf…"):
                 results = predict(image_bytes)
- 
+
             top_label, top_conf = results[0]
             plant, condition = split_label(top_label)
             healthy = is_healthy(condition)
             tone = "healthy" if healthy else "diseased"
-            ring_color = "#3F8F5B" if healthy else "#B5532B"
             badge = "Looks healthy" if healthy else "Disease detected"
             plant_line = f"{html.escape(plant)} leaf" if plant else "Predicted class"
- 
+
             bars = ""
-            for rank, (label, conf) in enumerate(results[:show_top]):
+            for rank, (label, conf) in enumerate(results):
                 p_name, c_name = split_label(label)
                 shown = f"{p_name} · {c_name}" if p_name else c_name
                 cls = "fill top" if rank == 0 else "fill"
@@ -329,23 +429,21 @@ with right:
                     f"<b>{html.escape(shown)}</b><span>{conf:.2f}%</span></div>"
                     f'<div class="track"><div class="{cls}" style="width:{max(conf, 0.8):.2f}%"></div></div></div>'
                 )
- 
+
             st.markdown(
                 f"""
                 <div class="card">
                   <h3>Result</h3>
                   <div class="sub">Most likely class for this image</div>
                   <div class="verdict {tone}">
-                    <div class="ring" style="--p:{top_conf:.1f}; --ring-color:{ring_color};">
-                      <span>{top_conf:.0f}%</span>
-                    </div>
+                    <div class="ring" style="--p:{top_conf:.1f};"><span>{top_conf:.0f}%</span></div>
                     <div>
                       <p class="plant">{plant_line}</p>
                       <div class="name">{html.escape(condition)}</div>
                       <span class="badge">{badge}</span>
                     </div>
                   </div>
-                  <b>Top {min(show_top, len(results))} predictions</b>
+                  <div class="list-title">Top {len(results)} predictions</div>
                   {bars}
                   <div class="disclaimer">
                     This is a model prediction, not a confirmed diagnosis. For treatment
@@ -355,24 +453,20 @@ with right:
                 """,
                 unsafe_allow_html=True,
             )
- 
+
             if top_conf < 60:
-                st.warning(
-                    "Confidence is low. Try a closer, sharper photo of a single leaf in good daylight."
-                )
- 
+                st.warning("Confidence is low. Try a closer, sharper photo of a single leaf in good daylight.")
+
         except Exception as error:
-            st.error(
-                "The model could not analyse this image. Check your connection and try another photo."
-            )
+            st.error("The model could not analyse this image. Check your connection and try another photo.")
             with st.expander("Technical details"):
-                st.exception(error)
- 
+                st.markdown(f'<pre class="err">{html.escape(repr(error))}</pre>', unsafe_allow_html=True)
+
 # ------------------------------------------------------------------
-# Tips
+# Tips and footer
 # ------------------------------------------------------------------
 st.markdown(
-    """
+    f"""
     <div class="tips">
       <div class="tip"><div class="emoji">☀️</div><h4>Use natural light</h4>
         <p>Daylight without harsh shadows shows the true colour of spots and lesions.</p></div>
@@ -381,8 +475,10 @@ st.markdown(
       <div class="tip"><div class="emoji">📷</div><h4>Keep it sharp</h4>
         <p>Hold steady and tap to focus. Blurry photos lower the model's confidence.</p></div>
     </div>
-    <div class="footer">Built with PyTorch, Hugging Face Transformers and Streamlit</div>
+    <div class="footer">
+      Built with PyTorch, Hugging Face Transformers and Streamlit<br>
+      <a href="https://huggingface.co/{MODEL_ID}" target="_blank" rel="noopener">View the model on Hugging Face</a>
+    </div>
     """,
     unsafe_allow_html=True,
-)
- 
+) 
