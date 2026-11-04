@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ---------- Premium botanical styling ----------
+# ---------- Botanical styling ----------
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
@@ -39,11 +39,10 @@ st.markdown("""
 
 .block-container {
     max-width: 1160px;
-    padding-top: 2rem;
-    padding-bottom: 3rem;
+    padding: 2rem 2rem 3rem 2rem;
 }
 
-/* Readable headings and body text */
+/* Headings and normal text */
 h1, h2, h3, h4, h5, h6 {
     color: var(--forest) !important;
     font-family: 'Playfair Display', serif !important;
@@ -60,7 +59,7 @@ h1, h2, h3, h4, h5, h6 {
 .hero {
     background: linear-gradient(120deg, #183D2B, #315D40);
     color: #FFFFFF;
-    padding: 2.6rem 2.4rem;
+    padding: 2.5rem;
     border-radius: 24px;
     margin-bottom: 1.6rem;
     box-shadow: 0 12px 35px rgba(24,61,43,.12);
@@ -69,7 +68,7 @@ h1, h2, h3, h4, h5, h6 {
 .hero h1 {
     color: #FFFFFF !important;
     font-size: clamp(2rem, 4vw, 3.2rem);
-    line-height: 1.15;
+    line-height: 1.2;
     margin-bottom: .8rem;
 }
 
@@ -109,8 +108,7 @@ div[data-testid="stMetricLabel"],
 div[data-testid="stMetricLabel"] *,
 div[data-testid="stMetricValue"],
 div[data-testid="stMetricValue"] *,
-div[data-testid="stMetricDelta"],
-div[data-testid="stMetricDelta"] * {
+div[data-testid="stMetricDelta"] {
     color: #183D2B !important;
 }
 
@@ -135,12 +133,39 @@ div[data-testid="stMetricDelta"] * {
     color: #FFFFFF !important;
 }
 
-/* File uploader */
+/* File uploader: full width, visible text, no clipped contents */
 div[data-testid="stFileUploader"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 150px;
+    overflow: visible !important;
+    box-sizing: border-box !important;
     background: #FFFFFF;
+    color: #26382C;
     border: 1px dashed #A9BDA7;
     border-radius: 16px;
-    padding: .6rem;
+    padding: 16px !important;
+}
+
+div[data-testid="stFileUploader"] > section {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100px;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+}
+
+div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] {
+    display: flex !important;
+    width: 100% !important;
+    min-height: 110px;
+    height: auto !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    align-items: center;
 }
 
 div[data-testid="stFileUploader"] label,
@@ -148,6 +173,14 @@ div[data-testid="stFileUploader"] p,
 div[data-testid="stFileUploader"] span,
 div[data-testid="stFileUploader"] small {
     color: #26382C !important;
+    opacity: 1 !important;
+}
+
+div[data-testid="stFileUploader"] button {
+    color: #183D2B !important;
+    background: #F0F3EA !important;
+    border: 1px solid #A9BDA7 !important;
+    border-radius: 8px !important;
 }
 
 /* Prediction result */
@@ -216,6 +249,22 @@ div[data-testid="stFileUploader"] small {
 .footer strong {
     color: #183D2B !important;
 }
+
+/* Small screens */
+@media (max-width: 640px) {
+    .block-container {
+        padding: 1rem 1rem 2rem 1rem;
+    }
+
+    .hero {
+        padding: 1.5rem;
+        border-radius: 16px;
+    }
+
+    div[data-testid="stFileUploader"] {
+        padding: 10px !important;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -253,7 +302,7 @@ with st.sidebar:
     )
 
 
-# ---------- Hero section ----------
+# ---------- Hero ----------
 st.markdown("""
 <div class="hero">
     <div class="eyebrow">SMARTER PLANT CARE · POWERED BY AI</div>
@@ -269,7 +318,6 @@ st.markdown("""
 
 # ---------- Overview metrics ----------
 m1, m2, m3 = st.columns(3)
-
 m1.metric("Test accuracy", "86.71%")
 m2.metric("Disease classes", "38")
 m3.metric("Model", "MobileNetV2")
@@ -280,7 +328,6 @@ st.markdown(
     '<div class="section-label">01 — YOUR LEAF</div>',
     unsafe_allow_html=True,
 )
-
 st.header("Let's examine your plant")
 st.write(
     "Choose a clear photo showing the leaf as distinctly as possible."
@@ -317,9 +364,7 @@ if uploaded_file is not None:
                 '<div class="section-label">02 — AI ANALYSIS</div>',
                 unsafe_allow_html=True,
             )
-
             st.subheader("Ready to inspect")
-
             st.write(
                 "The model will compare your image with patterns "
                 "learned during training."
@@ -333,7 +378,6 @@ if uploaded_file is not None:
         if detect:
             with st.spinner("Analyzing your leaf..."):
                 processor, model = load_model()
-
                 inputs = processor(
                     images=image,
                     return_tensors="pt",
@@ -347,10 +391,7 @@ if uploaded_file is not None:
                     )[0]
 
                 count = min(3, probabilities.shape[0])
-                scores, indices = torch.topk(
-                    probabilities,
-                    k=count,
-                )
+                scores, indices = torch.topk(probabilities, k=count)
 
                 id2label = {
                     int(key): value
@@ -358,10 +399,7 @@ if uploaded_file is not None:
                 }
 
                 best_id = int(indices[0].item())
-                best_label = id2label.get(
-                    best_id,
-                    str(best_id),
-                )
+                best_label = id2label.get(best_id, str(best_id))
                 confidence = float(scores[0].item()) * 100
 
             # ---------- Results ----------
@@ -380,32 +418,22 @@ if uploaded_file is not None:
                 unsafe_allow_html=True,
             )
 
-            st.metric(
-                "Model confidence",
-                f"{confidence:.1f}%",
-            )
-
+            st.metric("Model confidence", f"{confidence:.1f}%")
             st.caption(
-                "Confidence is the model's score for its top "
-                "prediction; it is not a guarantee of correctness."
+                "Confidence is the model's score for its top prediction; "
+                "it is not a guarantee of correctness."
             )
 
             with st.expander("See the top 3 predictions"):
                 for class_id, score in zip(indices, scores):
                     class_id = int(class_id.item())
                     score_percent = float(score.item()) * 100
-
-                    class_name = id2label.get(
-                        class_id,
-                        str(class_id),
-                    )
+                    class_name = id2label.get(class_id, str(class_id))
 
                     st.write(
                         f"**{class_name}** — {score_percent:.1f}%"
                     )
-                    st.progress(
-                        min(score_percent / 100, 1.0)
-                    )
+                    st.progress(min(score_percent / 100, 1.0))
 
             st.info(
                 "This result is an AI prediction, not a confirmed "
@@ -418,7 +446,6 @@ if uploaded_file is not None:
             "Something went wrong while loading the model or "
             "processing the image. Check the app logs for details."
         )
-
         with st.expander("Technical details"):
             st.exception(error)
 
