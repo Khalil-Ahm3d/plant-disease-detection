@@ -4,9 +4,10 @@ import torch
 from PIL import Image
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
-# Replace with your actual Hugging Face username
+# ---------- Model configuration ----------
 MODEL_ID = "khalilahmed0062/plant-disease-detection-mobilenet"
 
+# ---------- Page configuration ----------
 st.set_page_config(
     page_title="Khalil's Plant Disease Detection",
     page_icon="🌿",
@@ -32,18 +33,22 @@ st.markdown("""
     color: var(--ink);
     font-family: 'DM Sans', sans-serif;
 }
+
 [data-testid="stHeader"] {
     background: rgba(250,249,244,0.9);
 }
+
 .block-container {
     max-width: 1160px;
     padding-top: 2rem;
     padding-bottom: 3rem;
 }
+
 h1, h2, h3 {
     color: var(--forest) !important;
     font-family: 'Playfair Display', serif !important;
 }
+
 .hero {
     background: linear-gradient(120deg, #183D2B, #315D40);
     color: white;
@@ -52,18 +57,21 @@ h1, h2, h3 {
     margin-bottom: 1.6rem;
     box-shadow: 0 12px 35px rgba(24,61,43,.12);
 }
+
 .hero h1 {
     color: #FFFFFF !important;
     font-size: clamp(2rem, 4vw, 3.2rem);
     line-height: 1.15;
     margin-bottom: .8rem;
 }
+
 .hero p {
     color: #E0EBDD;
     font-size: 1.05rem;
     max-width: 680px;
     line-height: 1.7;
 }
+
 .eyebrow {
     color: #C5DDBF;
     font-size: .76rem;
@@ -71,6 +79,7 @@ h1, h2, h3 {
     letter-spacing: .16em;
     text-transform: uppercase;
 }
+
 .section-label {
     color: #52745A;
     font-weight: 700;
@@ -78,6 +87,7 @@ h1, h2, h3 {
     letter-spacing: .12em;
     text-transform: uppercase;
 }
+
 div[data-testid="stMetric"] {
     background: white;
     border: 1px solid #E5E9DF;
@@ -85,9 +95,11 @@ div[data-testid="stMetric"] {
     border-radius: 16px;
     box-shadow: 0 4px 15px rgba(24,61,43,.035);
 }
+
 div[data-testid="stMetricLabel"] {
     color: #617465;
 }
+
 .stButton > button {
     background: var(--forest);
     color: white;
@@ -98,17 +110,20 @@ div[data-testid="stMetricLabel"] {
     min-height: 3rem;
     transition: all .2s ease;
 }
+
 .stButton > button:hover {
     background: var(--leaf);
     color: white;
     border: 0;
 }
+
 div[data-testid="stFileUploader"] {
     background: white;
     border: 1px dashed #A9BDA7;
     border-radius: 16px;
     padding: .6rem;
 }
+
 .result-card {
     background: white;
     border: 1px solid #E3E9DF;
@@ -116,6 +131,7 @@ div[data-testid="stFileUploader"] {
     padding: 1.4rem;
     margin: .6rem 0 1rem 0;
 }
+
 .result-name {
     color: #183D2B;
     font-family: 'Playfair Display', serif;
@@ -123,11 +139,13 @@ div[data-testid="stFileUploader"] {
     font-weight: 600;
     overflow-wrap: anywhere;
 }
+
 .small-note {
     color: #667568;
     font-size: .88rem;
     line-height: 1.6;
 }
+
 .footer {
     border-top: 1px solid #DFE6DB;
     padding-top: 1.2rem;
@@ -136,11 +154,13 @@ div[data-testid="stFileUploader"] {
     font-size: .85rem;
     text-align: center;
 }
+
 [data-testid="stSidebar"] {
     background: #F0F3EA;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # ---------- Model loading ----------
 @st.cache_resource(show_spinner=False)
@@ -149,6 +169,7 @@ def load_model():
     model = AutoModelForImageClassification.from_pretrained(MODEL_ID)
     model.eval()
     return processor, model
+
 
 # ---------- Sidebar ----------
 with st.sidebar:
@@ -173,7 +194,8 @@ with st.sidebar:
         "Accuracy on an individual image may vary."
     )
 
-# ---------- Hero ----------
+
+# ---------- Hero section ----------
 st.markdown("""
 <div class="hero">
     <div class="eyebrow">SMARTER PLANT CARE · POWERED BY AI</div>
@@ -186,26 +208,36 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+
 # ---------- Overview metrics ----------
 m1, m2, m3 = st.columns(3)
+
 m1.metric("Test accuracy", "86.71%")
 m2.metric("Disease classes", "38")
 m3.metric("Model", "MobileNetV2")
 
 st.write("")
-st.markdown('<div class="section-label">01 — YOUR LEAF</div>',
-            unsafe_allow_html=True)
+
+st.markdown(
+    '<div class="section-label">01 — YOUR LEAF</div>',
+    unsafe_allow_html=True,
+)
+
 st.header("Let's examine your plant")
-st.write("Choose a clear photo showing the leaf as distinctly as possible.")
-
-
-uploaded_file = st.file_uploader(
-    "Upload a leaf photo",
-    type=["jpg", "jpeg", "png", "webp", "bmp", "tif", "tiff", "gif"],
-    help="Supported formats: JPG, PNG, WebP, BMP, TIFF and GIF."
+st.write(
+    "Choose a clear photo showing the leaf as distinctly as possible."
 )
 
 
+# ---------- Image uploader ----------
+uploaded_file = st.file_uploader(
+    "Upload a leaf photo",
+    type=["jpg", "jpeg", "png", "webp", "bmp", "tif", "tiff", "gif"],
+    help="Supported formats: JPG, PNG, WebP, BMP, TIFF and GIF.",
+)
+
+
+# ---------- Image processing and prediction ----------
 if uploaded_file is not None:
     try:
         image = Image.open(uploaded_file).convert("RGB")
@@ -213,12 +245,21 @@ if uploaded_file is not None:
         left, right = st.columns([1.05, 1], gap="large")
 
         with left:
-            st.image(image, caption="Your uploaded leaf", use_container_width=True)
-            st.caption("For best results, use a sharp image with good lighting.")
+            st.image(
+                image,
+                caption="Your uploaded leaf",
+                use_container_width=True,
+            )
+            st.caption(
+                "For best results, use a sharp image with good lighting."
+            )
 
         with right:
-            st.markdown('<div class="section-label">02 — AI ANALYSIS</div>',
-                        unsafe_allow_html=True)
+            st.markdown(
+                '<div class="section-label">02 — AI ANALYSIS</div>',
+                unsafe_allow_html=True,
+            )
+
             st.subheader("Ready to inspect")
 
             st.write(
@@ -234,16 +275,24 @@ if uploaded_file is not None:
             if detect:
                 with st.spinner("Analyzing your leaf..."):
                     processor, model = load_model()
-                    inputs = processor(images=image, return_tensors="pt")
+
+                    inputs = processor(
+                        images=image,
+                        return_tensors="pt",
+                    )
 
                     with torch.inference_mode():
                         outputs = model(**inputs)
                         probabilities = torch.softmax(
-                            outputs.logits, dim=-1
+                            outputs.logits,
+                            dim=-1,
                         )[0]
 
                     count = min(3, probabilities.shape[0])
-                    scores, indices = torch.topk(probabilities, k=count)
+                    scores, indices = torch.topk(
+                        probabilities,
+                        k=count,
+                    )
 
                     id2label = {
                         int(key): value
@@ -251,11 +300,18 @@ if uploaded_file is not None:
                     }
 
                     best_id = int(indices[0].item())
-                    best_label = id2label.get(best_id, str(best_id))
+                    best_label = id2label.get(
+                        best_id,
+                        str(best_id),
+                    )
                     confidence = float(scores[0].item()) * 100
 
-                st.markdown('<div class="section-label">03 — YOUR RESULTS</div>',
-                            unsafe_allow_html=True)
+                # ---------- Results ----------
+                st.markdown(
+                    '<div class="section-label">03 — YOUR RESULTS</div>',
+                    unsafe_allow_html=True,
+                )
+
                 st.markdown(
                     f"""
                     <div class="result-card">
@@ -266,21 +322,32 @@ if uploaded_file is not None:
                     unsafe_allow_html=True,
                 )
 
-                st.metric("Model confidence", f"{confidence:.1f}%")
+                st.metric(
+                    "Model confidence",
+                    f"{confidence:.1f}%",
+                )
+
                 st.caption(
-                    "Confidence is the model's score for its top prediction; "
-                    "it is not a guarantee of correctness."
+                    "Confidence is the model's score for its top "
+                    "prediction; it is not a guarantee of correctness."
                 )
 
                 with st.expander("See the top 3 predictions"):
                     for class_id, score in zip(indices, scores):
                         class_id = int(class_id.item())
                         score_percent = float(score.item()) * 100
+
                         class_name = id2label.get(
-                            class_id, str(class_id)
+                            class_id,
+                            str(class_id),
                         )
-                        st.write(f"**{class_name}** — {score_percent:.1f}%")
-                        st.progress(min(score_percent / 100, 1.0))
+
+                        st.write(
+                            f"**{class_name}** — {score_percent:.1f}%"
+                        )
+                        st.progress(
+                            min(score_percent / 100, 1.0)
+                        )
 
                 st.info(
                     "This result is an AI prediction, not a confirmed "
@@ -290,9 +357,10 @@ if uploaded_file is not None:
 
     except Exception as error:
         st.error(
-            "Something went wrong while loading the model or processing "
-            "the image. Check the app logs for details."
+            "Something went wrong while loading the model or "
+            "processing the image. Check the app logs for details."
         )
+
         with st.expander("Technical details"):
             st.exception(error)
 
@@ -300,6 +368,7 @@ else:
     st.info(
         "👆 Upload a leaf image above to begin your plant health analysis."
     )
+
 
 # ---------- Footer ----------
 st.markdown("""
@@ -309,9 +378,3 @@ st.markdown("""
     Built for learning and smarter plant care 🌱
 </div>
 """, unsafe_allow_html=True)
-
-            
-
-    except Exception as error:
-        st.error("The image could not be processed or the model could not load.")
-        st.exception(error)
