@@ -19,6 +19,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# Optional HEIC/HEIF support (iPhone photos). Add `pillow-heif` to requirements.txt.
+IMAGE_TYPES = ["jpg", "jpeg", "jfif", "png", "webp", "bmp", "tif", "tiff", "gif"]
+try:
+    from pillow_heif import register_heif_opener
+
+    register_heif_opener()
+    IMAGE_TYPES += ["heic", "heif"]
+except Exception:
+    pass
+
 # ------------------------------------------------------------------
 # Themes (System follows the device; Light and Dark are forced)
 # ------------------------------------------------------------------
@@ -120,12 +130,7 @@ h1, h2, h3, h4 { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; lett
   font-size: clamp(2.1rem, 4.6vw, 3.6rem); font-weight: 800; line-height: 1.03;
   margin: 0 0 .9rem; color: #fff; max-width: 15ch;
 }
-.hero p { font-size: 1.07rem; line-height: 1.55; max-width: 50ch; color: #CFE3D2; margin: 0 0 1.4rem; }
-.chips { display: flex; flex-wrap: wrap; gap: .5rem; }
-.chip {
-  padding: .36rem .85rem; border-radius: 999px; font-size: .84rem; font-weight: 500;
-  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #E8F5E6;
-}
+.hero p { font-size: 1.07rem; line-height: 1.55; max-width: 50ch; color: #CFE3D2; margin: 0; }
 
 /* ---------- Cards ---------- */
 .card {
@@ -143,9 +148,11 @@ h1, h2, h3, h4 { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; lett
 }
 
 /* ---------- File uploader ---------- */
-[data-testid="stFileUploader"] * { color: var(--ink); }
+[data-testid="stFileUploader"], [data-testid="stFileUploader"] * { color: var(--ink) !important; }
 [data-testid="stFileUploader"] small,
-[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzoneInstructions"] span { color: var(--muted) !important; }
+[data-testid="stFileUploaderDropzoneInstructions"], [data-testid="stFileUploaderDropzoneInstructions"] * {
+  color: var(--muted) !important;
+}
 [data-testid="stFileUploaderDropzone"], [data-testid="stFileUploader"] section {
   background: var(--surface2) !important; border: 2px dashed var(--line-strong) !important;
   border-radius: 18px !important; padding: 1.4rem !important;
@@ -154,12 +161,25 @@ h1, h2, h3, h4 { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; lett
 [data-testid="stFileUploaderDropzone"]:hover, [data-testid="stFileUploader"] section:hover {
   border-color: var(--accent) !important;
 }
-[data-testid="stFileUploader"] button {
+/* Browse button */
+[data-testid="stFileUploaderDropzone"] button {
   background: var(--accent) !important; border: 1px solid var(--accent) !important;
   border-radius: 999px !important; font-weight: 600;
 }
-[data-testid="stFileUploader"] button, [data-testid="stFileUploader"] button * { color: #fff !important; }
-[data-testid="stFileUploaderFile"] { background: transparent; }
+[data-testid="stFileUploaderDropzone"] button, [data-testid="stFileUploaderDropzone"] button * { color: #fff !important; }
+/* Uploaded file row: name, size, icon, remove button */
+[data-testid="stFileUploaderFile"] {
+  background: var(--surface) !important; border: 1px solid var(--line); border-radius: 12px;
+  padding: .45rem .7rem; margin-top: .6rem;
+}
+[data-testid="stFileUploaderFile"] *, [data-testid="stFileUploaderFileName"] {
+  color: var(--ink) !important; opacity: 1 !important;
+}
+[data-testid="stFileUploaderFile"] small { color: var(--muted) !important; }
+[data-testid="stFileUploaderFile"] svg { fill: currentColor; }
+[data-testid="stFileUploaderDeleteBtn"] button, [data-testid="stFileUploaderFile"] button {
+  background: transparent !important; border: none !important;
+}
 
 /* ---------- Image / captions / spinner ---------- */
 [data-testid="stImage"] img { border-radius: 18px; border: 1px solid var(--line); }
@@ -279,7 +299,7 @@ def load_model():
 @st.cache_data(show_spinner=False)
 def predict(image_bytes: bytes, top_k: int = 5):
     processor, model = load_model()
-    image = ImageOps.exif_transpose(Image.open(io.BytesIO(image_bytes))).convert("RGB")
+    image = load_image(image_bytes)
 
     inputs = processor(images=image, return_tensors="pt")
     with torch.no_grad():
@@ -294,6 +314,17 @@ def predict(image_bytes: bytes, top_k: int = 5):
         label = label_map.get(i, label_map.get(str(i), str(i)))
         results.append((label, p * 100))
     return results
+
+
+def load_image(image_bytes: bytes) -> Image.Image:
+    """Open any supported image, fix phone rotation, flatten transparency onto white."""
+    img = ImageOps.exif_transpose(Image.open(io.BytesIO(image_bytes)))
+    if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+        rgba = img.convert("RGBA")
+        background = Image.new("RGB", rgba.size, (255, 255, 255))
+        background.paste(rgba, mask=rgba.split()[-1])
+        return background
+    return img.convert("RGB")
 
 
 def split_label(raw: str):
@@ -348,11 +379,6 @@ st.markdown(
       <h1>{APP_NAME}</h1>
       <p>Check a leaf in seconds. Upload a clear photo and the model names the most
       likely disease, with a confidence score and the closest alternatives.</p>
-      <div class="chips">
-        <span class="chip">MobileNet</span>
-        <span class="chip">Transfer learning</span>
-        <span class="chip">Hosted on Hugging Face</span>
-      </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -371,22 +397,23 @@ with left:
         '<div class="upload-anchor"></div>'
         '<h3 style="margin:0 0 .2rem;font-size:1.25rem;">Upload a leaf photo</h3>'
         '<div style="color:var(--muted);font-size:.95rem;margin-bottom:1rem;line-height:1.45;">'
-        "JPG or PNG. One leaf, in focus, on a plain background works best.</div>",
+        "Accepts " + ", ".join(t.upper() for t in IMAGE_TYPES if t not in ("jpeg", "jfif", "tif")) + ". "
+        "One leaf, in focus, on a plain background works best.</div>",
         unsafe_allow_html=True,
     )
     uploaded_file = st.file_uploader(
-        "Leaf image", type=["jpg", "jpeg", "png"], label_visibility="collapsed"
+        "Leaf image", type=IMAGE_TYPES, label_visibility="collapsed"
     )
 
     if uploaded_file is not None:
         try:
             image_bytes = uploaded_file.getvalue()
-            image = ImageOps.exif_transpose(Image.open(io.BytesIO(image_bytes))).convert("RGB")
+            image = load_image(image_bytes)
             st.image(image, caption=uploaded_file.name, use_container_width=True)
         except Exception:
             image = None
             image_bytes = None
-            st.error("That file could not be read as an image. Upload a JPG or PNG and try again.")
+            st.error("That file could not be read as an image. Try a JPG, PNG or WebP image instead.")
 
 with right:
     if image is None:
@@ -481,4 +508,4 @@ st.markdown(
     </div>
     """,
     unsafe_allow_html=True,
-) 
+)
