@@ -217,10 +217,41 @@ pre.err {white-space:pre-wrap;word-break:break-word;font-size:.82rem;line-height
 .tip p {margin:0;font-size:.8rem;color:var(--muted);line-height:1.5}
 .footer {text-align:center;color:var(--muted);font-size:.78rem;margin-top:2rem;line-height:1.8}
 .footer a {color:var(--accent-ink);font-weight:800;text-decoration:none}
-@media(max-width:850px){.block-container{padding:1rem 1rem 2rem}.hero{grid-template-columns:1fr;gap:1rem;padding:1.4rem 0 1rem}.hero-panel{min-height:150px}.tips{grid-template-columns:1fr}.verdict{gap:.8rem}}
-@media(max-width:520px){.brandbar{align-items:flex-start;gap:.7rem;flex-direction:column}.brandbar [data-testid="stRadio"]{justify-content:flex-start}.verdict{flex-direction:column;text-align:center}.hero h1{font-size:2.15rem}}
+@media(max-width:850px){
+ .block-container{padding:1rem 1.15rem 2.5rem}
+ .hero{grid-template-columns:1fr;gap:1rem;padding:1.35rem 0 1rem}
+ .hero-main{padding:.6rem 0}
+ .hero-panel{min-height:138px}
+ .tips{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+ [data-testid="stHorizontalBlock"]{flex-direction:column!important;align-items:stretch!important;gap:1rem!important}
+ [data-testid="column"],[data-testid="stColumn"]{width:100%!important;min-width:100%!important;flex:1 1 100%!important}
+ [data-testid="stRadio"]{justify-content:flex-start!important}
+ [data-testid="stRadio"] [role="radiogroup"]{width:100%;justify-content:space-between}
+ [data-testid="stRadio"] [role="radiogroup"] label{flex:1;text-align:center;padding:.45rem .25rem}
+ .block-container{padding:.8rem .85rem 2rem}
+ .hero h1{font-size:clamp(1.8rem,8vw,2.5rem);max-width:18ch}
+ .hero p{font-size:.92rem}
+ .crop-strip{gap:.35rem;padding:.75rem}
+ .crop{font-size:.72rem}
+ .card{padding:1rem;border-radius:17px}
+ [data-testid="stColumn"]:has(.upload-anchor),[data-testid="column"]:has(.upload-anchor){padding:1rem!important}
+ .verdict{gap:.8rem}
+ [data-testid="stImage"] img{width:100%!important;height:auto!important}
+ [data-testid="stFileUploaderDropzone"],[data-testid="stFileUploader"] section{padding:1rem .6rem!important}
+}
+@media(max-width:420px){
+ .brand b{font-size:.9rem}
+ .brand .mark{width:36px;height:36px}
+ .verdict{flex-direction:column;text-align:center}
+ .ring,.noicon{width:84px;height:84px}
+ .ring>div{width:68px;height:68px}
+ .hero-panel{padding:1.1rem;min-height:130px}
+ .panel-stat strong{font-size:1.9rem}
+}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-:focus-visible{outline:3px solid var(--accent)!important;outline-offset:2px}
+:focus-visible{outline:3px solid var(--accent)!important;outline-offset:2px}\n[data-testid="stAppViewContainer"]{overflow-x:hidden}\n[data-testid="stFileUploaderFileName"]{overflow-wrap:anywhere;word-break:break-word}
 </style>
 """.replace("/*THEME_VARS*/", theme_vars)
 
@@ -448,8 +479,8 @@ with nav_left:
     st.markdown(
         compact(
             f'<div class="brand"><div class="mark">{LEAF_SVG}</div>'
-            f'<div><b>FIELDNOTE <span style="color:var(--accent)">/ AI</span></b>'
-            f'<small>Plant health intelligence</small></div></div>'
+            f'<div><b>KHALIL’S <span style="color:var(--accent)">PLANT LAB</span></b>'
+            f'<small>AI-powered crop health</small></div></div>'
         ),
         unsafe_allow_html=True,
     )
@@ -469,8 +500,8 @@ st.markdown(
         <div class="hero">
           <div class="hero-main">
             <div class="eyebrow">Plant health workspace</div>
-            <h1>Know what your <em>leaves</em> are telling you.</h1>
-            <p>Upload a clear leaf photo to screen for common crop diseases. Review the leading prediction, confidence level and alternative matches in one place.</p>
+            <h1>Khalil’s <em>Plant Disease</em> Detection</h1>
+            <p>A smarter way to check your crops. Upload a leaf photo to identify likely diseases, review confidence and compare the closest predictions.</p>
           </div>
           <div class="hero-panel">
             <div class="panel-top"><span class="panel-kicker">AI diagnostic assistant</span><span class="panel-dot"></span></div>
